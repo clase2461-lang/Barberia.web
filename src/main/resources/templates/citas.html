@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Citas - Barbería Juan</title>
+    <style>
+        body { margin: 0; padding: 0; background: #12121e; color: #dcdce6; font-family: 'Segoe UI', sans-serif; }
+        .header { background: #1e1e32; padding: 20px; text-align: center; border-bottom: 2px solid #dca032; position: sticky; top: 0; z-index: 100; }
+        .header h1 { margin: 0; color: #dca032; font-size: 22px; }
+        .container { padding: 20px; padding-bottom: 80px; max-width: 800px; margin: 0 auto; }
+        .cita-card { background: #191b2a; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #dca032; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .cita-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #323750; padding-bottom: 10px; margin-bottom: 10px; }
+        .cita-fecha { font-weight: bold; color: #fff; }
+        .cita-estado { font-size: 12px; padding: 4px 8px; border-radius: 12px; background: #323750; color: #fff; }
+        .estado-pendiente { background: #dca032; color: #000; font-weight: bold; }
+        .estado-completada { background: #28a745; font-weight: bold; }
+        .cita-body p { margin: 5px 0; font-size: 14px; color: #a0a0b4; }
+        .btn-add { display: block; width: 100%; padding: 12px; background: #dca032; color: #000; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin-bottom: 20px; cursor: pointer; text-align: center; text-decoration: none; }
+        .form-container { background: #191b2a; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #323750; display: none; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 14px; color: #c8c8dc; }
+        .form-group select, .form-group input { width: 100%; padding: 10px; background: #12121e; border: 1px solid #323750; border-radius: 4px; color: #fff; box-sizing: border-box; }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #1e1e32; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #323750; }
+        .nav-item { color: #a0a0b4; text-decoration: none; font-size: 14px; display: flex; flex-direction: column; align-items: center; }
+        .nav-item.active { color: #dca032; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📅 Gestión de Citas</h1>
+    </div>
+
+    <div class="container">
+        <button class="btn-add" onclick="document.getElementById('formNuevaCita').style.display='block'">+ Nueva Cita</button>
+        
+        <div id="formNuevaCita" class="form-container">
+            <h3 style="margin-top:0; color:#dca032;">Agendar Cita</h3>
+            <form action="/citas/nueva" method="POST">
+                <div class="form-group">
+                    <label>Cliente</label>
+                    <select name="clienteId" required>
+                        <option value="">Selecciona un cliente</option>
+                        <option th:each="c : ${clientes}" th:value="${c.id}" th:text="${c.nombre} + ' ' + ${c.apellido}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Servicio</label>
+                    <select name="servicioId" required>
+                        <option value="">Selecciona un servicio</option>
+                        <option th:each="s : ${servicios}" th:value="${s.id}" th:text="${s.nombre} + ' ($' + ${s.precio} + ')'"></option>
+                    </select>
+                </div>
+                <div class="form-group" style="display: flex; gap: 10px;">
+                    <div style="flex:1;">
+                        <label>Fecha</label>
+                        <input type="date" name="fecha" required>
+                    </div>
+                    <div style="flex:1;">
+                        <label>Hora</label>
+                        <input type="time" name="hora" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notas</label>
+                    <input type="text" name="notas" placeholder="Ej. Corte escolar...">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn-add" style="margin:0;">Guardar</button>
+                    <button type="button" class="btn-add" style="margin:0; background:#323750; color:#fff;" onclick="document.getElementById('formNuevaCita').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+
+        <h2 style="color:#dcb464">Próximas Citas</h2>
+        
+        <!-- Loop for Citas -->
+        <div th:each="cita : ${citas}" class="cita-card">
+            <div class="cita-header">
+                <span class="cita-fecha" th:text="${#temporals.format(cita.fechaHora, 'dd/MM/yyyy HH:mm')}">12/05/2026 14:00</span>
+                <span class="cita-estado" 
+                      th:classappend="${cita.estado == 'PENDIENTE' ? 'estado-pendiente' : (cita.estado == 'COMPLETADA' ? 'estado-completada' : '')}"
+                      th:text="${cita.estado}">PENDIENTE</span>
+            </div>
+            <div class="cita-body">
+                <p><strong>Cliente:</strong> <span th:text="${nombresClientes.get(cita.clienteId)}">Nombre</span></p>
+                <p><strong>Total:</strong> $<span th:text="${cita.precioTotal}">150.0</span></p>
+                <p><strong>Notas:</strong> <span th:text="${cita.notas}">Ninguna</span></p>
+            </div>
+        </div>
+        
+        <div th:if="${citas.isEmpty()}" style="text-align: center; color: #a0a0b4; margin-top: 30px;">
+            <p>No hay citas registradas en el sistema.</p>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="/dashboard" class="nav-item">🏠 Inicio</a>
+        <a href="/citas" class="nav-item active">📅 Citas</a>
+        <a href="/logout" class="nav-item">🚪 Salir</a>
+    </div>
+</body>
+</html>
